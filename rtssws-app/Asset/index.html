@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html" lang="en">
+<head>
+    <title>Web console for RTSS</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <script rel="prefetch" src="/static/chart.min.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+    <script type="text/javascript">
+
+        /**
+         * selected process id for fast access
+         */
+        let processId;
+        /**
+         * chart component
+         */
+        let plotChart;
+        /**
+         * data acquisition and draw enabled
+         */
+        let state = false;
+        /**
+         * data count (to keep in the chart)
+         * @type {number}
+         */
+        let rangeCount = 60;
+        /**
+         * readed data count (to generate labels for the chart)
+         * @type {number}
+         */
+        let recordCount = 0;
+
+        /**
+         * requested data type mask
+         * */
+        let dataType = 255;
+
+        function getProcessList() {
+            return fetch('/pList')
+                .then((response) => response.json())
+                .then((responseJson) => {
+                    return responseJson
+                });
+        }
+
+        var onDataType_click = function () {
+            const index = this.name;
+            const cBit = setup.chartType[index].code;
+            const checked = this.checked;
+            if (checked) {
+                dataType |= cBit;
+            } else {
+                dataType &= ~cBit;
+            }
+            chartConfig.data.datasets[index].hidden = !checked;
+            plotChart.update();
+        }
+
+        //colors from: https://www.materialpalette.com/colors
+        const setup = {
+            chartType: [{
+                label: 'Cpu',
+                color: '#66bb6a',
+                code: 1
+            },
+            {
+                label: 'GCpu',
+                color: '#1b5e20',
+                code: 2
+            },
+            {
+                label: 'Mem',
+                color: '#cddc39',
+                code: 4
+            },
+            {
+                label: 'GMem',
+                color: '#afb42b',
+                code: 8
+            },
+            {
+                label: 'Temp',
+                color: '#ff5722',
+                code: 16
+            },
+            {
+                label: 'GTemp',
+                borderColor: '#bf360c',
+                code: 32
+            },
+            {
+                label: 'Disk',
+                color: '#d500f9',
+                code: 64
+            },
+            {
+                label: 'Fps',
+                color: '#212121',
+                code: 128
+            },
+            ]
+        }
+
+     
+        const chartConfig = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {                
+                scales: {
+                    y: {
+                        min: 0,
+                        suggestedMax: 100,
+                    },
+                },                
+            }
+        };
+
+
+        async function onInit() {
+            const processList = await getProcessList();
+            processId = 0;
+            let index = 0;
+            for (const ct of setup.chartType) {
+                const dataTypeDiv = document.getElementById('dataTypeDiv');
+                //<input type="checkbox" class="checkbox" onclick='handleTypeClick(0, this.checked)' id="cFps" name="cFps" checked><label for="cFps">Fps</label
+                const ictrl = document.createElement('input');
+                ictrl.id = ct.label;
+                ictrl.name = "" + index;
+                ictrl.type = "checkbox";
+                ictrl.class = "checkbox";
+                ictrl.onclick = onDataType_click;
+                ictrl.checked = true;
+                dataTypeDiv.appendChild(ictrl);
+                const lctrl = document.createElement('label');
+                lctrl.for = ct.label;
+                lctrl.innerHTML = ct.label;
+                dataTypeDiv.appendChild(lctrl);
+
+                var dataCC = {
+                    label: ct.label,
+                    borderColor: ct.color
+                }
+                chartConfig.data.datasets.push(dataCC);
+                index++;
+            }
+            //console.log(processList);
+            const selectComponent = document.getElementById('processSelectCombo');
+            processList.GetProcessListResult.forEach(function (obj) {
+                const opt = document.createElement('option');
+                opt.value = obj.ProcessId;
+                opt.innerHTML = obj.AppName + ' (' + obj.CurrentFps + ' FPS)';
+                selectComponent.appendChild(opt);
+            });
+        }
+
+        function rangeChange(control) {
+            rangeCount = control.value;
+            //console.log("Range changed to: " + rangeCount);
+        }
+
+        function refreshList() {
+            location.reload();
+        }
+
+        function processIdChange(control) {
+            processId = control.value;
+            //console.log("processId changed to: " + processId);
+        }
+
+        function initChart() {
+            const canvDiv = document.getElementById('canvasDiv');
+            const canv = document.createElement('canvas');
+            canv.id = "chartCanvas";
+            const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+            const height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+            canv.height = (height * 0.77)
+            canv.width = (width * 0.9)
+            canvDiv.appendChild(canv);
+
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            plotChart = new Chart(ctx, chartConfig);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function getRefreshInterval() {
+            var e = document.getElementById("refreshInterval");
+            return (e.value * 1000);
+        }
+
+        function getProcessData() {
+            return fetch('/pData?pid=' + processId + '&d=' + dataType)
+                .then((response) => response.json())
+                .then((responseJson) => {
+                    if (responseJson.GetProcessDataResult != null) {
+                        const totalDataLen = chartConfig.data.labels.length + responseJson.GetProcessDataResult.length;
+                        let overflow = totalDataLen - rangeCount;
+                        while (overflow > 0) {
+                            for (let i = 0; i < setup.chartType.length; i++) {
+                                chartConfig.data.datasets[i].data.shift();
+                            }
+                            chartConfig.data.labels.shift();
+                            overflow--;
+                        }
+                        responseJson.GetProcessDataResult.forEach(function (obj) {
+                            for (let i = 0; i < setup.chartType.length; i++) {
+                                chartConfig.data.datasets[i].data.push(obj.Data[i]);
+                            }
+                            chartConfig.data.labels.push(recordCount++);
+                        });
+                        plotChart.update();
+                    }
+                }).catch((error) => {
+                    console.log(error)
+                    alert("Error during query performance data. Check RTSS server is running...");
+                    location.reload();
+                });
+        }
+
+        function toggleState() {
+            const btn = document.getElementById('toggleStateButton');
+            btn.disabled = true;
+            if (state === false) {
+                initChart();
+                btn.innerText = 'Stop'
+                state = true;
+                updateState();
+            } else {
+                state = false;
+                btn.innerText = 'Start'
+                document.getElementById('chartCanvas').remove();
+                for (let i = 0; i < setup.chartType.length; i++) {
+                    chartConfig.data.datasets[i].data = [];
+                }
+                chartConfig.data.labels = [];
+                recordCount = 0;
+            }
+            btn.disabled = false;
+        }
+
+        async function updateState() {
+            if (state === true) {
+                await getProcessData();
+                setTimeout(updateState, getRefreshInterval());
+            }
+        }
+
+
+        window.onload = onInit;
+    </script>
+</head>
+<body>
+    <h2>Web console for RTSS</h2>
+    <div>
+        <label for="processSelectCombo">Choose a process:</label>
+        <select name="processSelectCombo" id="processSelectCombo" onchange="processIdChange(this)">
+            <option value="0">None</option>
+        </select>
+        <button id="refreshListButton" onclick="refreshList()">Refresh</button>
+    </div>
+    <div class="inputLine">
+        <label for="refreshInterval">Refresh:</label>
+        <select name="refreshInterval" id="refreshInterval">
+            Refresh
+            <option value="1">1 sec</option>
+            <option value="2">2 sec</option>
+            <option value="3">3 sec</option>
+            <option value="4">4 sec</option>
+            <option value="5">5 sec</option>
+        </select>
+        <label for="rangeValue">Range:</label>
+        <select name="rangeValue" id="rangeValue" onchange="rangeChange(this)">
+            Range
+            <option value=30>30 sec</option>
+            <option value=60 selected="selected">1 min</option>
+            <option value=120>2 min</option>
+            <option value=180>3 min</option>
+            <option value=240>3 min</option>
+            <option value=300>5 min</option>
+        </select><br>
+    </div>
+    <div id="dataTypeDiv" class="inputLine">
+        Plot:      
+    </div>
+    <div class="inputLine">
+        <button id="toggleStateButton" onclick="toggleState()">Start</button>
+    </div>
+    <div id="canvasDiv"></div>
+    <script>
+
+    </script>
+</body>
+</html>

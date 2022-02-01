@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30523.141
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "rtssws-app", "rtssws-app\rtssws-app.csproj", "{F0C71463-AFBE-4964-85CE-0FB24DF90018}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F0C71463-AFBE-4964-85CE-0FB24DF90018}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F0C71463-AFBE-4964-85CE-0FB24DF90018}.Debug|x86.Build.0 = Debug|Any CPU
+		{F0C71463-AFBE-4964-85CE-0FB24DF90018}.Release|x86.ActiveCfg = Release|x86
+		{F0C71463-AFBE-4964-85CE-0FB24DF90018}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A3E8E0AB-5D9A-4113-921E-D227EDC73F6A}
+	EndGlobalSection
+EndGlobal
