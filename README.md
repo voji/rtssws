@@ -37,6 +37,6 @@ If you can't access the application page from another computer, try to enable in
 You can report bugs, or add suggestions on [project page](https://github.com/voji/rtssws/issues)
 
 ## Thanks
-
+- [Chart.js](https://www.chartjs.org/)
 - [LibreHardwareMonitor project](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
 - [RTSSSharedMemoryNET](https://github.com/spencerhakim/RTSSSharedMemoryNET)
