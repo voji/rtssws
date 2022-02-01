@@ -10,9 +10,9 @@ This app required administrative rights, and .Net runtime 4.2 or higher.
 Additionaly if you would like to measure 3D application render performance (FPS), you need to install (and run)  **Guru 3D Riva Tuner Statistics Server** software. You can download it from [here](https://www.guru3d.com/files-details/rtss-rivatuner-statistics-server-download.html). 
 
 ## Screenshots
-![Web](rtssws-app\Asset\scrWeb.png )
+![Web](rtssws-app/Asset/scrWeb.png )
 
-![Server](rtssws-app\Asset\scrApp.png )
+![Server](rtssws-app/Asset/scrApp.png )
 
 ## Measurement
 The polling rate defines the measurement frequency. When you use extreme high measure rate (like 10ms), the polling of values can cause significant load of your system.
